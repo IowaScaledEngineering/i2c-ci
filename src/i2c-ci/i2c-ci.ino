@@ -101,7 +101,7 @@ uint8_t i2cReadByte(uint8_t ack)
 }
 
 
-
+/*
 uint8_t writeByte(uint8_t addr, uint8_t cmd, uint16_t writeVal)
 {
 	uint8_t ack;
@@ -136,7 +136,7 @@ uint8_t readByte(uint8_t addr, uint8_t cmd, uint8_t* data)
 
 	return ack;
 }
-
+*/
 
 
 void setup()
@@ -148,30 +148,50 @@ void setup()
 	Serial.begin(115200); //This pipes to the serial monitor
 }
 
-uint8_t i;
-
 void loop()
 {
+	uint8_t inputByte;
 	uint8_t data;
 	char str[3];
+
+	while(!Serial.available());
+	inputByte = Serial.read();
 	
-	Serial.print("Read data: ");
+	switch(inputByte)
+	{
+		case 's':
+			// Start
+			i2cStart();
+			break;
+		case 'p':
+			// Stop
+			i2cStop();
+			Serial.print('.');
+			break;
+		case 'W':
+			// Write a byte
+			while(!Serial.available());
+			str[0] = Serial.read();
+			while(!Serial.available());
+			str[1] = Serial.read();
+			str[2] = 0;
+			data = strtol(str, NULL, 16);
+			if(!i2cWriteByte(data))
+			{
+				Serial.print('N');
+			}
+			break;
+		case 'R':
+		case 'Q':
+			// Read a byte
+			data = i2cReadByte(inputByte == 'Q');
+			snprintf(str, sizeof(str), "%02X", data);
+			Serial.print(str);
+			break;
+	}
 
-	writeByte(0x5C, 0x88, i);
-	readByte(0x5C, 0x88, &data);
-
-	snprintf(str, sizeof(str), "%02X", data);
-	
-	Serial.println(str);
-
-	digitalWrite(RXLED, LOW);   // set the RX LED ON
-	TXLED0; //TX LED is not tied to a normally controlled pin so a macro is needed, turn LED OFF
-	delay(200);              // wait for a second
-
-	digitalWrite(RXLED, HIGH);    // set the RX LED OFF
-	TXLED1; //TX LED macro to turn LED ON
-	delay(200);              // wait for a second
-	
-	i++;
+//	writeByte(0x5C, 0x88, 0x12);
+//	snprintf(str, sizeof(str), "%02X", data);
+//	Serial.println(str);
 }
 
