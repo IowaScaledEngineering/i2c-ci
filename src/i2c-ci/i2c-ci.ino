@@ -17,9 +17,14 @@ LICENSE:
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-*************************************************************************/
+PROTOCOL:
+    s   = Send start on I2C bus
+    WNN = Send hex data NN on I2C bus
+    R   = Read data from I2C bus, with NACK, return 2 hex chars over serial
+    Q   = Read data from I2C bus, with ACK, return 2 hex chars over serial
+    p   = Send stop on I2C bus, return '.' over serial
 
-int RXLED = 17;  // The RX LED has a defined Arduino pin
+*************************************************************************/
 
 #define   SDA   PD1
 #define   SCL   PD0
