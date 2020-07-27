@@ -9,6 +9,7 @@
 BASE_NAME = i2c-ci
 
 BOARD  = SparkFun:avr:promicro:cpu=16MHzatmega32U4
+PORT   = /dev/ttyACM0
 
 ARDUINO = ~/arduino
 
@@ -18,10 +19,10 @@ help:
 	@echo "make terminal... Open uart terminal"
 
 verify:
-	$(ARDUINO) --verify --board $(BOARD) $(BASE_NAME).ino
+	$(ARDUINO) --verify --board $(BOARD) --port $(PORT) $(BASE_NAME).ino
 
 upload:
-	$(ARDUINO) --upload --board $(BOARD) $(BASE_NAME).ino
+	$(ARDUINO) --upload --board $(BOARD) --port $(PORT) $(BASE_NAME).ino
 
 terminal:
 	miniterm.py /dev/ttyACM0 115200

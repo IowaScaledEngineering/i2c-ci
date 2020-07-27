@@ -24,10 +24,19 @@ PROTOCOL:
     Q   = Read data from I2C bus, with ACK, return 2 hex chars over serial
     p   = Send stop on I2C bus, return '.' over serial
 
+    \n  = End command recipe and begin I2C transaction, return '.' when done
+	
+	Return of '!' indicates buffer overflow, recipe ignored
 *************************************************************************/
 
 #define   SDA   PD1
 #define   SCL   PD0
+
+// Block Write - Block Read Process Call with 255 data bytes:
+// S Addr Wr [A] Comm [A] Count [A] Data [A] ... S Addr Rd [A] [Count] A [Data] ... A P
+// s Wnn         Wnn      Wnn       Wnn x 255    s Wnn         Wnn       Q x 254  R   p
+// <----------- 10 ------------->  <-- 765 -->  <-------- 7 -------->  <--- 255 --> <- 1 -> = 1038 bytes
+uint8_t rxStr[2048];
 
 static inline void sda_low() { DDRD |= _BV(SDA); _delay_us(10); }
 static inline void sda_high() { DDRD &= ~_BV(SDA); _delay_us(10); }
@@ -155,44 +164,69 @@ void setup()
 
 void loop()
 {
-	uint8_t inputByte;
+	uint16_t rxPtr = 0;
+	uint8_t rxChr = 0;
+	uint8_t i;
+
+	uint8_t overflow = 0;
+	
 	uint8_t data;
 	char str[3];
-
-	while(!Serial.available());
-	inputByte = Serial.read();
 	
-	switch(inputByte)
+	do
 	{
-		case 's':
-			// Start
-			i2cStart();
-			break;
-		case 'p':
-			// Stop
-			i2cStop();
-			Serial.print('.');
-			break;
-		case 'W':
-			// Write a byte
-			while(!Serial.available());
-			str[0] = Serial.read();
-			while(!Serial.available());
-			str[1] = Serial.read();
-			str[2] = 0;
-			data = strtol(str, NULL, 16);
-			if(!i2cWriteByte(data))
+		if(Serial.available())
+		{
+			rxChr = Serial.read();
+			if(sizeof(rxStr) == rxPtr)
 			{
-				Serial.print('N');
+				// Overflowed, back up the ptr so we don't overrun the buffer
+				overflow = 1;
+				rxPtr--;
 			}
-			break;
-		case 'R':
-		case 'Q':
-			// Read a byte
-			data = i2cReadByte(inputByte == 'Q');
-			snprintf(str, sizeof(str), "%02X", data);
-			Serial.print(str);
-			break;
+			rxStr[rxPtr++] = rxChr;
+		}
+	} while('\n' != rxChr);
+
+	if(overflow)
+	{
+		Serial.print('!');
+	}
+	else
+	{
+		for(i=0; i<rxPtr; i++)
+		{
+			switch(rxStr[i])
+			{
+				case 's':
+					// Start
+					i2cStart();
+					break;
+				case 'p':
+					// Stop
+					i2cStop();
+					break;
+				case 'W':
+					// Write a byte
+					str[0] = rxStr[++i];
+					str[1] = rxStr[++i];
+					str[2] = 0;
+					data = strtol(str, NULL, 16);
+					if(!i2cWriteByte(data))
+					{
+						Serial.print('N');
+					}
+					break;
+				case 'R':
+				case 'Q':
+					// Read a byte
+					data = i2cReadByte(rxStr[i] == 'Q');
+					snprintf(str, sizeof(str), "%02X", data);
+					Serial.print(str);
+					break;
+			}
+		}
+		Serial.print('.');
 	}
 
 //	writeByte(0x5C, 0x88, 0x12);
