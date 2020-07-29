@@ -41,9 +41,12 @@ print()
 
 data = smb.read_block_data(0x5C, 0x88)
 print("Return Data: ", end='')
-for value in data:
-    print(" 0x{:02X}".format(value), end='')
-print()
+if(-1 != data):
+    for value in data:
+        print(" 0x{:02X}".format(value), end='')
+    print()
+else:
+    print(data)
 print(smb.lastReturnBytes.decode())
 print(smb.nack())
 print()
