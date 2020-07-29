@@ -74,7 +74,6 @@ class SMBus(object):
 		SMBus Quick transaction
 		"""
 		cmdString = 'sW{:02X}p\n'.format(i2c_addr << 1)
-		print(cmdString, end='')
 		self.port.write(cmdString.encode('utf-8'))
 		self.get_response()
 
@@ -90,7 +89,6 @@ class SMBus(object):
 		SMBus Write Byte
 		"""
 		cmdString = 'sW{:02X}W{:02X}p\n'.format(i2c_addr << 1, data)
-		print(cmdString, end='')
 		self.port.write(cmdString.encode('utf-8'))
 		self.get_response()
 
@@ -99,7 +97,6 @@ class SMBus(object):
 		SMBus Read Byte from command/register
 		"""
 		cmdString = 'sW{:02X}W{:02X}sW{:02X}Rp\n'.format(i2c_addr << 1, command, (i2c_addr << 1)|0x01)
-		print(cmdString, end='')
 		self.port.write(cmdString.encode('utf-8'))
 		self.get_response()
 		if(self._nack):
@@ -112,7 +109,6 @@ class SMBus(object):
 		SMBus Write Byte to command/register
 		"""
 		cmdString = 'sW{:02X}W{:02X}W{:02X}p\n'.format(i2c_addr << 1, command, data)
-		print(cmdString, end='')
 		self.port.write(cmdString.encode('utf-8'))
 		self.get_response()
 
@@ -121,7 +117,6 @@ class SMBus(object):
 		SMBus Read Word from command/register
 		"""
 		cmdString = 'sW{:02X}W{:02X}sW{:02X}QRp\n'.format(i2c_addr << 1, command, (i2c_addr << 1)|0x01)
-		print(cmdString, end='')
 		self.port.write(cmdString.encode('utf-8'))
 		self.get_response()
 		if(self._nack):
@@ -134,7 +129,6 @@ class SMBus(object):
 		SMBus Write Word to command/register
 		"""
 		cmdString = 'sW{:02X}W{:02X}W{:02X}W{:02X}p\n'.format(i2c_addr << 1, command, data & 0xFF, (data >> 8) & 0xFF)
-		print(cmdString, end='')
 		self.port.write(cmdString.encode('utf-8'))
 		self.get_response()
 
@@ -150,7 +144,6 @@ class SMBus(object):
 		"""
 		# Todo: add optional length parameter.  If provided, don't interactively determine the length from the response
 		cmdString = 'sW{:02X}W{:02X}sW{:02X}Q\n'.format(i2c_addr << 1, command, (i2c_addr << 1)|0x01)
-		print(cmdString, end='')
 		self.port.write(cmdString.encode('utf-8'))
 		self.get_response()   # get length
 		if(self._nack):
@@ -160,7 +153,6 @@ class SMBus(object):
 		for i in range(length-1):   # one less than length since the last byte will be grabbed with the 'R' below
 			cmdString = cmdString + 'Q'
 		cmdString = cmdString + 'Rp\n'
-		print(cmdString, end='')
 		self.port.write(cmdString.encode('utf-8'))
 		self.get_response()
 		if(self._nack):
@@ -181,7 +173,6 @@ class SMBus(object):
 		for value in data:
 			cmdString = cmdString + 'W{:02X}'.format(value)
 		cmdString = cmdString + 'p\n'
-		print(cmdString, end='')
 		self.port.write(cmdString.encode('utf-8'))
 		self.get_response()
 
