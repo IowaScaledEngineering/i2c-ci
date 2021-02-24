@@ -33,14 +33,26 @@ class SMBus(object):
   """
   Return an SMBus object connected to the specified serial port
   """
-  _pecEnabled = 0
+  _pecEnabled = False
   _pecMismatch = False
   _nack = False
+  _pecTable = []
   lastReturnBytes = bytearray()
 
   def __init__(self, port=""):
     if port != "":
       self.open(port)
+    # Calculate PEC table
+    generator = 0x07;
+    for d in range(256):
+      pecEntry = d;
+      for bit in range(8):
+        if(pecEntry & 0x80):
+            pecEntry = (pecEntry << 1) & 0xFF;
+            pecEntry = pecEntry ^ generator;
+        else:
+            pecEntry = (pecEntry << 1) & 0xFF;
+      self._pecTable.append(pecEntry);
 
   def close(self):
     """close()
@@ -57,6 +69,13 @@ class SMBus(object):
     _pecMismatch = False
     _nack = False
 
+  def calculatePec(self, dataBytes):
+    pecValue = 0;
+    for b in dataBytes:
+      index = b ^ pecValue
+      pecValue = self._pecTable[index]
+    return pecValue;
+
   def get_response(self):
     self.lastReturnBytes.clear()
     self._nack = False
@@ -67,6 +86,13 @@ class SMBus(object):
         self._nack = True
       elif b'.' == incomingByte:
         break
+
+  def raw_cmd(self, cmdString):
+    """
+    Raw write to the interface.  Response can be found in lastReturnBytes.
+    """
+    self.port.write(cmdString.encode('utf-8'))
+    self.get_response()
 
   def write_quick(self, i2c_addr):
     """
@@ -107,7 +133,11 @@ class SMBus(object):
     """
     SMBus Write Byte to command/register
     """
-    cmdString = 'sW{:02X}W{:02X}W{:02X}p\n'.format(i2c_addr << 1, command, data)
+    if self.pec:
+      pecByte = self.calculatePec([i2c_addr << 1, command, data])
+      cmdString = 'sW{:02X}W{:02X}W{:02X}W{:02X}p\n'.format(i2c_addr << 1, command, data, pecByte)
+    else:
+      cmdString = 'sW{:02X}W{:02X}W{:02X}p\n'.format(i2c_addr << 1, command, data)
     self.port.write(cmdString.encode('utf-8'))
     self.get_response()
 
@@ -127,7 +157,19 @@ class SMBus(object):
     """
     SMBus Write Word to command/register
     """
-    cmdString = 'sW{:02X}W{:02X}W{:02X}W{:02X}p\n'.format(i2c_addr << 1, command, data & 0xFF, (data >> 8) & 0xFF)
+    if self.pec:
+      pecByte = self.calculatePec([i2c_addr << 1, command, data & 0xFF, (data >> 8) & 0xFF])
+      cmdString = 'sW{:02X}W{:02X}W{:02X}W{:02X}W{:02X}p\n'.format(i2c_addr << 1, command, data & 0xFF, (data >> 8) & 0xFF, pecByte)
+    else:
+      cmdString = 'sW{:02X}W{:02X}W{:02X}W{:02X}p\n'.format(i2c_addr << 1, command, data & 0xFF, (data >> 8) & 0xFF)
+    self.port.write(cmdString.encode('utf-8'))
+    self.get_response()
+
+  def write_word_data_pec(self, i2c_addr, command, data, pec):
+    """
+    SMBus Write Word to command/register with user provided PEC
+    """
+    cmdString = 'sW{:02X}W{:02X}W{:02X}W{:02X}W{:02X}p\n'.format(i2c_addr << 1, command, data & 0xFF, (data >> 8) & 0xFF, pec)
     self.port.write(cmdString.encode('utf-8'))
     self.get_response()
 
