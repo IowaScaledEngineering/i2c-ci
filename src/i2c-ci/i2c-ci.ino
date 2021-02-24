@@ -38,10 +38,10 @@ PROTOCOL:
 // <----------- 10 ------------->  <-- 765 -->  <-------- 7 -------->  <--- 255 --> <- 1 -> = 1038 bytes
 uint8_t rxStr[2048];
 
-static inline void sda_low() { DDRD |= _BV(SDA); _delay_us(10); }
-static inline void sda_high() { DDRD &= ~_BV(SDA); _delay_us(10); }
-static inline void scl_low() { DDRD |= _BV(SCL); _delay_us(10); }
-static inline void scl_high() { DDRD &= ~_BV(SCL); _delay_us(10); }
+static inline void sda_low() { DDRD |= _BV(SDA); _delay_us(1); }
+static inline void sda_high() { DDRD &= ~_BV(SDA); _delay_us(1); }
+static inline void scl_low() { DDRD |= _BV(SCL); _delay_us(1); }
+static inline void scl_high() { DDRD &= ~_BV(SCL); _delay_us(1); }
 
 void i2cStart(void)
 {
